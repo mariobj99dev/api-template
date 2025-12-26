@@ -1,0 +1,114 @@
+// features/auth/helpers/refresh.helper.js
+
+const repo = require('../auth.repository');
+
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+
+const {
+    Unauthorized,
+    NotFound,
+} = require('../../../app/errors');
+
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN;
+
+const sha256 = (value) =>
+    crypto.createHash('sha256').update(value).digest('hex');
+
+const signAccessToken = (userId) =>
+    jwt.sign({ id: userId }, JWT_ACCESS_SECRET, {
+        expiresIn: JWT_ACCESS_EXPIRES_IN,
+    });
+
+const signRefreshToken = ({ sessionId, userId, expiresIn }) =>
+    jwt.sign(
+        { sid: sessionId, uid: userId, type: 'refresh' },
+        JWT_REFRESH_SECRET,
+        { expiresIn }
+    );
+
+const verifyRefreshToken = (refreshToken) => {
+    try {
+        return jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    } catch {
+        throw Unauthorized('Invalid or expired refresh token', 'REFRESH_INVALID');
+    }
+};
+
+const loadValidSession = async (payload) => {
+    if (payload.type !== 'refresh' || !payload.sid || !payload.uid) {
+        throw Unauthorized('Invalid refresh token payload', 'REFRESH_PAYLOAD');
+    }
+
+    const session = await repo.findSessionById(payload.sid);
+    if (!session) throw NotFound('Session not found', 'SESSION_NOT_FOUND');
+
+    if (session.revoked_at) {
+        throw Unauthorized('Session revoked', 'SESSION_REVOKED');
+    }
+
+    if (new Date(session.expires_at) <= new Date()) {
+        await repo.revokeSession({ sessionId: session.id, reason: 'expired' });
+        throw Unauthorized('Session expired', 'SESSION_EXPIRED');
+    }
+
+    return session;
+};
+
+const rotateTokens = async ({ session, refreshToken }) => {
+    const incomingHash = sha256(refreshToken);
+
+    // ✅ token actual
+    if (incomingHash === session.refresh_token_hash) {
+        const accessToken = signAccessToken(session.user_id);
+
+        const remainingMs =
+            new Date(session.expires_at).getTime() - Date.now();
+        const remainingSeconds = Math.floor(remainingMs / 1000);
+
+        if (remainingSeconds <= 0) {
+            await repo.revokeSession({ sessionId: session.id, reason: 'expired' });
+            throw Unauthorized('Session expired', 'SESSION_EXPIRED');
+        }
+
+        const newRefreshToken = signRefreshToken({
+            sessionId: session.id,
+            userId: session.user_id,
+            expiresIn: remainingSeconds,
+        });
+
+        await repo.rotateSessionToken({
+            sessionId: session.id,
+            newRefreshTokenHash: sha256(newRefreshToken),
+        });
+
+        return { accessToken, refreshToken: newRefreshToken };
+    }
+
+    // 🚨 reuse detectado
+    if (
+        session.previous_refresh_token_hash &&
+        incomingHash === session.previous_refresh_token_hash
+    ) {
+        await repo.revokeAllUserSessions({
+            userId: session.user_id,
+            reason: 'refresh_reuse_detected',
+        });
+        throw Unauthorized('Refresh token reuse detected', 'REFRESH_INVALID');
+    }
+
+    await repo.revokeSession({
+        sessionId: session.id,
+        reason: 'invalid_refresh',
+    });
+
+    throw Unauthorized('Invalid refresh token', 'REFRESH_INVALID');
+};
+
+module.exports = {
+    verifyRefreshToken,
+    loadValidSession,
+    rotateTokens,
+};
