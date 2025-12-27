@@ -1,4 +1,4 @@
-# 🚀 Node.js + Express API Template
+# 🚀 API Template
 
 A reusable **Node.js + Express API template** designed with a strong focus on **modularity**, **low coupling**, and **scalability**.
 
