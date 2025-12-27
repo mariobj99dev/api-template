@@ -29,9 +29,32 @@ const {
     rotateTokens,
 } = require('./helpers/refresh.helper');
 
+exports.login = async ({ identifier, password }, { ip } = {}) => {
+    if (!ip) {
+        logger.warn({ identifier }, 'Login attempt without IP');
+        throw BadRequest('IP address missing', 'IP_MISSING');
+    }
+
+    await enforceLoginRateLimit({ identifier, ip });
+
+    const authUser = await authenticateUser({
+        identifier,
+        password,
+        ip,
+    });
+
+    logger.info(
+        { userId: authUser.id, ip },
+        'Login successful'
+    );
+
+    return createSessionAndTokens(authUser.id);
+};
+
 exports.register = async ({ email, password, username }) => {
     const exists = await userPort.existsByEmail(email);
     if (exists) {
+        logger.warn({ email }, 'Register attempt with existing email');
         throw Conflict('Email already in use', 'EMAIL_EXISTS');
     }
 
@@ -49,21 +72,6 @@ exports.register = async ({ email, password, username }) => {
     };
 };
 
-exports.login = async ({ identifier, password }, { ip } = {}) => {
-    if (!ip) {
-        throw BadRequest('IP address missing', 'IP_MISSING');
-    }
-
-    await enforceLoginRateLimit({ identifier, ip });
-
-    const authUser = await authenticateUser({
-        identifier,
-        password,
-        ip,
-    });
-
-    return createSessionAndTokens(authUser.id);
-};
 
 exports.refresh = async ({ refreshToken }) => {
     if (!refreshToken) {

@@ -1,6 +1,6 @@
 
 require('dotenv').config();
-
+const logger = require('./config/logger')
 /*const validateEnv = require('./config/env');
 validateEnv();*/
 
@@ -11,5 +11,5 @@ const app = require('./app.js')
 const PORT = API_PORT
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`)
+    logger.info(`Server is running on http://localhost:${PORT}`)
 })

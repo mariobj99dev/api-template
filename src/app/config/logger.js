@@ -1,0 +1,21 @@
+
+const pino = require('pino')
+
+const isProd = process.env.NODE_ENV === "production"
+
+const logger = pino({
+    level: isProd ? 'info': 'debug',
+    base: undefined,
+    transport: !isProd
+        ? {
+            target: 'pino-pretty',
+            options: {
+                colorize: true,
+                translateTime: 'HH:MM:ss',
+                ignore: 'pid,hostname',
+            },
+        }
+        : undefined,
+});
+
+module.exports = logger

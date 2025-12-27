@@ -48,6 +48,10 @@ const enforceLoginRateLimit = async ({ identifier, ip }) => {
     });
 
     if (failedAttempts >= MAX_LOGIN_ATTEMPTS) {
+        logger.warn(
+            { identifier, ip },
+            'Login rate limit exceeded'
+        );
         throw TooManyRequests(
             'Too many login attempts. Try again later.',
             'LOGIN_RATE_LIMIT'

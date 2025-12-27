@@ -1,15 +1,16 @@
 const cron = require('node-cron');
 const db = require('../database');
-
+const logger = require('../config/logger')
 const { SESSION_LOGOUT_RETENTION_DAYS } = require('../../app/config/env');
 
 const LOGOUT_RETENTION_DAYS = Number(
     SESSION_LOGOUT_RETENTION_DAYS
 );
 
+//TODO: El sql no está desacoplado, esto no cumple con ports & adapters
 // Corre cada día a las 03:00
 cron.schedule('0 3 * * *', async () => {
-    console.log('[CRON] Cleaning user sessions...');
+    logger.info('Session cleanup started');
 
     // 1️⃣ Borrar sesiones expiradas
     await db.query(`
@@ -25,5 +26,5 @@ cron.schedule('0 3 * * *', async () => {
       AND revoked_at < NOW() - INTERVAL '${LOGOUT_RETENTION_DAYS} days'
   `);
 
-    console.log('[CRON] Session cleanup completed');
+    logger.info('Session cleanup completed');
 });

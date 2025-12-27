@@ -52,6 +52,10 @@ const loadValidSession = async (payload) => {
     if (!session) throw NotFound('Session not found', 'SESSION_NOT_FOUND');
 
     if (session.revoked_at) {
+        logger.warn(
+            { sessionId: session.id },
+            'Attempt to use revoked session'
+        );
         throw Unauthorized('Session revoked', 'SESSION_REVOKED');
     }
 
@@ -102,6 +106,10 @@ const rotateTokens = async ({ session, refreshToken }) => {
             userId: session.user_id,
             reason: 'refresh_reuse_detected',
         });
+        logger.error(
+            { userId: session.user_id, sessionId: session.id },
+            'Refresh token reuse detected'
+        );
         throw Unauthorized('Refresh token reuse detected', 'REFRESH_INVALID');
     }
 

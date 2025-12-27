@@ -2,6 +2,7 @@
 const service = require('./auth.service');
 const { LoginDTO } = require('./dtos/login.dto');
 const { RegisterDTO } = require('./dtos/register.dto');
+const logger = require('../../app/config/logger')
 
 const {
     COOKIE_HTTP_ONLY,
@@ -27,6 +28,11 @@ const REFRESH_COOKIE_OPTIONS = {
 exports.login = async (req, res) => {
     const dto = LoginDTO(req.body);
     const { accessToken, refreshToken } = await service.login(dto, { ip: req.ip });
+
+    logger.info(
+        { userId: dto.identifier, ip: req.ip },
+        'User logged in'
+    );
 
     res
         .cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS)
