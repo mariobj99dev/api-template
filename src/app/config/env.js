@@ -1,5 +1,6 @@
 const requiredEnvVars = {
     API_PORT: 'number',
+    NODE_ENV: 'string',
 
     COOKIE_HTTP_ONLY: 'boolean',
     COOKIE_SECURE: 'boolean',
@@ -77,9 +78,14 @@ const validateAndLoadEnv = () => {
     }
 
     if (errors.length > 0) {
-        console.error('Environment validation failed:\n');
-        errors.forEach(err => console.error(`❌ ${err}`));
-        process.exit(1); // 🔥 FAIL FAST
+        if (process.env.NODE_ENV !== 'test') {
+            console.error('Environment validation failed:\n');
+            errors.forEach(err => console.error(`❌ ${err}`));
+            process.exit(1); // 🔥 FAIL FAST en prod/dev
+        }
+
+        // En test: no matar el proceso
+        return {};
     }
 
     return env;
