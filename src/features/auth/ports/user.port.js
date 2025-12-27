@@ -1,38 +1,34 @@
 
+let implementation = null;
+
+const ensureImpl = () => {
+    if (!implementation) {
+        throw new Error("UserPort implementation not set")
+    }
+}
+
 module.exports = {
-    /**
-     * Usado por login
-     * @param {string} identifier
-     * @returns {Promise<{ id: string|number, passwordHash: string } | null>}
-     */
-    findForAuth: async (identifier) => {
-        throw new Error('User port not implemented');
+    setImplementation: (impl) => {
+        implementation = impl;
     },
 
-    /**
-     * Usado por register
-     * @param {{ email: string, passwordHash: string, username?: string }}
-     * @returns {Promise<{ id: string|number }>}
-     */
-    createForAuth: async (data) => {
-        throw new Error('User port not implemented');
+    findForAuth: async (...args) => {
+        ensureImpl();
+        return implementation.findForAuth(...args);
     },
 
-    /**
-     * Opcional: comprobar existencia
-     * @param {string} email
-     * @returns {Promise<boolean>}
-     */
-    existsByEmail: async (email) => {
-        throw new Error('User port not implemented');
+    createForAuth: async (...args) => {
+        ensureImpl();
+        return implementation.createForAuth(...args);
     },
 
-    /**
-     * Usado por /me
-     * @param {string|number} userId
-     * @returns {Promise<object|null>}
-     */
-    findPublicProfileById: async (userId) => {
-        throw new Error('User port not implemented');
+    existsByEmail: async (...args) => {
+        ensureImpl();
+        return implementation.existsByEmail(...args);
+    },
+
+    findPublicProfileById: async (...args) => {
+        ensureImpl();
+        return implementation.findPublicProfileById(...args);
     },
 };

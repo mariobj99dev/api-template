@@ -3,7 +3,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const userPort = require('./adapters/user.pg.adapter');
+const userPort = require('./ports/user.port');
 const repo = require('./auth.repository');
 
 const {

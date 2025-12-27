@@ -1,7 +1,7 @@
 // features/auth/helpers/login.helper.js
 
 const repo = require('../auth.repository');
-const userPort = require('../adapters/user.pg.adapter');
+const userPort = require('../ports/user.port');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');

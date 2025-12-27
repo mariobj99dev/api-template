@@ -3,6 +3,11 @@ const router = express.Router();
 const controller = require('./auth.controller.js');
 const authMiddleware = require('../../app/middlewares/auth.middleware');
 
+const userPort = require('../auth/ports/user.port');
+const userPgAdapter = require('../auth/adapters/user.pg.adapter');
+
+userPort.setImplementation(userPgAdapter);
+
 router.post('/login', controller.login);
 router.post('/register', controller.register);
 router.post('/refresh', controller.refresh);
