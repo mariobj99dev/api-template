@@ -1,8 +1,10 @@
 const cron = require('node-cron');
 const db = require('../database');
 
+const { SESSION_LOGOUT_RETENTION_DAYS } = require('../../app/config/env');
+
 const LOGOUT_RETENTION_DAYS = Number(
-    process.env.SESSION_LOGOUT_RETENTION_DAYS
+    SESSION_LOGOUT_RETENTION_DAYS
 );
 
 // Corre cada día a las 03:00

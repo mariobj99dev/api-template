@@ -12,17 +12,19 @@ const {
     Unauthorized,
 } = require('../../../app/errors');
 
-const MAX_LOGIN_ATTEMPTS = Number(process.env.MAX_LOGIN_ATTEMPTS);
-const LOGIN_ATTEMPT_WINDOW_MINUTES = Number(process.env.LOGIN_ATTEMPT_WINDOW_MINUTES);
-
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
-const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN;
+const {
+    MAX_LOGIN_ATTEMPTS,
+    LOGIN_ATTEMPT_WINDOW_MINUTES,
+    JWT_ACCESS_SECRET,
+    JWT_ACCESS_EXPIRES_IN,
+    JWT_REFRESH_SECRET,
+    JWT_REFRESH_EXPIRES_IN,
+    REFRESH_TOKEN_PEPPER
+} = require('../../../app/config/env');
 
 const hashRefreshToken = (token) =>
     crypto
-        .createHmac('sha256', process.env.REFRESH_TOKEN_PEPPER)
+        .createHmac('sha256', REFRESH_TOKEN_PEPPER)
         .update(token)
         .digest('hex');
 

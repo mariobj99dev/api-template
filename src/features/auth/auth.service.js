@@ -7,6 +7,11 @@ const userPort = require('./adapters/user.pg.adapter');
 const repo = require('./auth.repository');
 
 const {
+    SALT_ROUNDS,
+    JWT_REFRESH_SECRET,
+} = require('../../app/config/env');
+
+const {
     BadRequest,
     Conflict,
     NotFound
@@ -23,9 +28,6 @@ const {
     loadValidSession,
     rotateTokens,
 } = require('./helpers/refresh.helper');
-
-const SALT_ROUNDS = Number(process.env.SALT_ROUNDS);
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 exports.register = async ({ email, password, username }) => {
     const exists = await userPort.existsByEmail(email);

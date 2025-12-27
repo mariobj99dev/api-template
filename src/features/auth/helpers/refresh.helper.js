@@ -10,12 +10,18 @@ const {
     NotFound,
 } = require('../../../app/errors');
 
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
-const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN;
+const {
+    JWT_REFRESH_SECRET,
+    JWT_ACCESS_SECRET,
+    JWT_ACCESS_EXPIRES_IN,
+    REFRESH_TOKEN_PEPPER,
+} = require('../../../app/config/env');
 
-const sha256 = (value) =>
-    crypto.createHash('sha256').update(value).digest('hex');
+const hashRefreshToken = (token) =>
+    crypto
+        .createHmac('sha256', REFRESH_TOKEN_PEPPER)
+        .update(token)
+        .digest('hex');
 
 const signAccessToken = (userId) =>
     jwt.sign({ id: userId }, JWT_ACCESS_SECRET, {
@@ -58,7 +64,7 @@ const loadValidSession = async (payload) => {
 };
 
 const rotateTokens = async ({ session, refreshToken }) => {
-    const incomingHash = sha256(refreshToken);
+    const incomingHash = hashRefreshToken(refreshToken);
 
     // ✅ token actual
     if (incomingHash === session.refresh_token_hash) {
@@ -81,7 +87,7 @@ const rotateTokens = async ({ session, refreshToken }) => {
 
         await repo.rotateSessionToken({
             sessionId: session.id,
-            newRefreshTokenHash: sha256(newRefreshToken),
+            newRefreshTokenHash: hashRefreshToken(newRefreshToken),
         });
 
         return { accessToken, refreshToken: newRefreshToken };

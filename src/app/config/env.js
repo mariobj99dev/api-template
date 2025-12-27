@@ -1,6 +1,10 @@
-
 const requiredEnvVars = {
     API_PORT: 'number',
+
+    COOKIE_HTTP_ONLY: 'boolean',
+    COOKIE_SECURE: 'boolean',
+    COOKIE_SAMESITE: 'string',
+    COOKIE_PATH: 'string',
 
     DATABASE_HOST: 'string',
     DATABASE_USER: 'string',
@@ -22,30 +26,63 @@ const requiredEnvVars = {
     LOGIN_ATTEMPT_WINDOW_MINUTES: 'number',
 
     SESSION_LOGOUT_RETENTION_DAYS: 'number',
-
 };
 
-const validateEnv = () => {
+const parseBoolean = (value) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return null;
+};
+
+const validateAndLoadEnv = () => {
     const errors = [];
+    const env = {};
 
     for (const [key, type] of Object.entries(requiredEnvVars)) {
-        const value = process.env[key];
+        const rawValue = process.env[key];
 
-        if (value === undefined) {
+        if (rawValue === undefined) {
             errors.push(`Missing environment variable: ${key}`);
             continue;
         }
 
-        if (type === 'number' && Number.isNaN(Number(value))) {
-            errors.push(`Environment variable ${key} must be a number`);
+        switch (type) {
+            case 'number': {
+                const num = Number(rawValue);
+                if (Number.isNaN(num)) {
+                    errors.push(`Environment variable ${key} must be a number`);
+                } else {
+                    env[key] = num;
+                }
+                break;
+            }
+
+            case 'boolean': {
+                const bool = parseBoolean(rawValue);
+                if (bool === null) {
+                    errors.push(`Environment variable ${key} must be 'true' or 'false'`);
+                } else {
+                    env[key] = bool;
+                }
+                break;
+            }
+
+            case 'string':
+                env[key] = rawValue;
+                break;
+
+            default:
+                errors.push(`Unknown type for env var ${key}`);
         }
     }
 
     if (errors.length > 0) {
         console.error('Environment validation failed:\n');
-        errors.forEach(err => console.error(err));
-        process.exit(1); // ⬅️ MATA la app
+        errors.forEach(err => console.error(`❌ ${err}`));
+        process.exit(1); // 🔥 FAIL FAST
     }
+
+    return env;
 };
 
-module.exports = validateEnv;
+module.exports = validateAndLoadEnv();
