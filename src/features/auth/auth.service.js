@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt');
 const userPort = require('./ports/user.port');
 const repo = require('./auth.repository');
 
+const logger = require('../../app/config/logger')
+
 const {
     SALT_ROUNDS,
     JWT_REFRESH_SECRET,

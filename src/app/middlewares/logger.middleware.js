@@ -4,9 +4,31 @@ const logger = require('../config/logger');
 
 module.exports = pinoHttp({
     logger,
-    customLogLevel: (res, err) => {
-        if (res.statusCode >= 500 || err) return 'error';
+
+    autoLogging: {
+        ignore: () => false,
+    },
+
+    customLogLevel: (res) => {
+        if (res.statusCode >= 500) return 'error';
         if (res.statusCode >= 400) return 'warn';
         return 'info';
     },
+
+    serializers: {
+        req(req) {
+            return {
+                method: req.method,
+                url: req.url,
+                ip: req.remoteAddress,
+            };
+        },
+        res(res) {
+            return {
+                statusCode: res.statusCode,
+            };
+        },
+    },
+
+    customSuccessMessage: () => 'request completed',
 });
