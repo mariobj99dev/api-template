@@ -29,3 +29,8 @@ exports.me = async (req, res) => {
     const result = await service.me(req.userId);
     res.json(result);
 };
+
+exports.sessions = async (req, res) => {
+    const result = await service.sessions(req.userId);
+    res.json(result);
+}

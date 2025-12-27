@@ -87,3 +87,45 @@ exports.logLoginAttempt = async ({ email, ip, success }) => {
         [email, ip, success]
     );
 };
+
+// ----------------------------
+// Read-only / Debug
+// ----------------------------
+
+exports.findUserSessions = async (userId) => {
+    const result = await db.query(
+        `
+        SELECT
+            id,
+            created_at,
+            last_used_at,
+            expires_at,
+            revoked_at,
+            revoked_reason
+        FROM user_sessions
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        `,
+        [userId]
+    );
+
+    return result.rows;
+};
+
+exports.findLoginAttempts = async ({ email, limit = 20 }) => {
+    const result = await db.query(
+        `
+        SELECT
+            ip_address,
+            success,
+            created_at
+        FROM login_attempts
+        WHERE email = $1
+        ORDER BY created_at DESC
+        LIMIT $2
+        `,
+        [email, limit]
+    );
+
+    return result.rows;
+};

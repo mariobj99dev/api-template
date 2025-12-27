@@ -98,3 +98,23 @@ exports.me = async (userId) => {
 
     return user;
 };
+
+exports.sessions = async (userId) => {
+
+    const user = await userPort.findPublicProfileById(userId);
+    if (!user) {
+        throw NotFound('User not found', 'USER_NOT_FOUND');
+    }
+
+    const sessions = await repo.findUserSessions(userId);
+
+    const loginAttempts = await repo.findLoginAttempts({
+        email: user.email,
+        limit: 20,
+    });
+
+    return {
+        sessions,
+        loginAttempts,
+    };
+};

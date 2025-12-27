@@ -8,7 +8,6 @@ router.post('/register', controller.register);
 router.post('/refresh', controller.refresh);
 router.post('/logout', controller.logout);
 router.get('/me', authMiddleware, controller.me);
-
-//TODO: /session
+router.get('/sessions', authMiddleware, controller.sessions);
 
 module.exports = router;
