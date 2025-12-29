@@ -5,6 +5,8 @@ const controller = require('./auth.controller.js');
 const authMiddleware = require('../../app/middlewares/auth.middleware');
 const { validate } = require('../../app/middlewares/validate.middleware');
 
+const { AUTH_PROVIDERS } = require('../../app/config/env');
+
 const {
     loginSchema,
     registerSchema
@@ -13,7 +15,16 @@ const {
 const userPort = require('../auth/ports/user.port');
 const userPgAdapter = require('../auth/adapters/user.pg.adapter');
 
+const identityPort = require('./ports/identity.port');
+const identityPgAdapter = require('./adapters/identity.pg.adapter');
+
 userPort.setImplementation(userPgAdapter);
+identityPort.setImplementation(identityPgAdapter);
+
+if (AUTH_PROVIDERS?.google?.enabled) {
+    const googleRoutes = require('./providers/google/google.routes');
+    router.use('/', googleRoutes); // => /auth/google y /auth/google/callback
+}
 
 router.post(
     '/login',

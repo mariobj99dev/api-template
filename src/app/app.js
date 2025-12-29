@@ -1,13 +1,23 @@
 
+
 const express = require('express');
-const cookieParser = require('cookie-parser');
+const swaggerUi = require('swagger-ui-express');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const cors = require('cors');
+const YAML = require('yaml')
+const fs = require('fs')
+const path = require('path')
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+
 const routes = require('./routes');
 
 const errorMiddleware = require('./middlewares/error.middleware');
 const httpLogger = require('./middlewares/logger.middleware')
+
+const openapiPath = path.join(__dirname, 'docs', 'openapi.yaml');
+const openapiFile = fs.readFileSync(openapiPath, 'utf8');
+const openapiDocument = YAML.parse(openapiFile);
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -43,5 +53,8 @@ app.use(httpLogger)
 routes(app);
 
 app.use(errorMiddleware);
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
+
 
 module.exports = app;

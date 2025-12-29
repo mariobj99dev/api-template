@@ -4,6 +4,9 @@ const { LoginDTO } = require('./dtos/login.dto');
 const { RegisterDTO } = require('./dtos/register.dto');
 const logger = require('../../app/config/logger')
 
+const { REFRESH_COOKIE_OPTIONS } = require('./helpers/refreshCookieOptions.helper');
+
+
 const {
     COOKIE_HTTP_ONLY,
     COOKIE_SECURE,
@@ -11,12 +14,12 @@ const {
     COOKIE_PATH,
 } = require('../../app/config/env');
 
-const REFRESH_COOKIE_OPTIONS = {
+/*const REFRESH_COOKIE_OPTIONS = {
     httpOnly: COOKIE_HTTP_ONLY === 'true',
     secure: COOKIE_SECURE === 'true',
     sameSite: COOKIE_SAMESITE,
     path: COOKIE_PATH
-};
+};*/
 
 // Login sin cookie httpOnly + secure + sameSite
 /*exports.login = async (req, res) => {

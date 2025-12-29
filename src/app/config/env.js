@@ -27,6 +27,7 @@ const requiredEnvVars = {
     LOGIN_ATTEMPT_WINDOW_MINUTES: 'number',
 
     SESSION_LOGOUT_RETENTION_DAYS: 'number',
+    GOOGLE_AUTH_ENABLED: 'boolean',
 };
 
 const parseBoolean = (value) => {
@@ -39,7 +40,22 @@ const validateAndLoadEnv = () => {
     const errors = [];
     const env = {};
 
+    if (process.env.GOOGLE_AUTH_ENABLED === 'true') {
+        const providerRequired = [
+            'GOOGLE_CLIENT_ID',
+            'GOOGLE_CLIENT_SECRET',
+            'GOOGLE_CALLBACK_URL',
+        ];
+
+        for (const k of providerRequired) {
+            if (!process.env[k]) {
+                errors.push(`Missing environment variable: ${k} (required when GOOGLE_AUTH_ENABLED=true)`);
+            }
+        }
+    }
+
     for (const [key, type] of Object.entries(requiredEnvVars)) {
+
         const rawValue = process.env[key];
 
         if (rawValue === undefined) {
@@ -87,6 +103,15 @@ const validateAndLoadEnv = () => {
         // En test: no matar el proceso
         return {};
     }
+
+    env.AUTH_PROVIDERS = {
+        google: {
+            enabled: env.GOOGLE_AUTH_ENABLED,
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+        }
+    };
 
     return env;
 };

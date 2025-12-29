@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: API Template
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+  /auth/register:
+    post:
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username: { type: string, minLength: 2 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+      responses:
+        "201":
+          description: Created
