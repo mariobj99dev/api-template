@@ -1,6 +1,9 @@
 
 
 const express = require('express');
+
+require('./bootstrap');
+
 const swaggerUi = require('swagger-ui-express');
 const helmet = require('helmet');
 const cors = require('cors');
