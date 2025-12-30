@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 const userPort = require('./ports/user.port');
+const userProfilePort = require('../profile/ports/userProfile.port');
+const transactionPort = require('./ports/transaction.port');
 const repo = require('./auth.repository');
 
 const logger = require('../../app/config/logger')
@@ -62,11 +64,19 @@ exports.register = async ({ email, password, username }) => {
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-    const user = await userPort.createForAuth({
-        email,
-        passwordHash,
-        username,
-    });
+    const user = await transactionPort.runInTransaction(async (tx) => {
+        const user = await userPort.createForAuth(
+            {email, passwordHash, username},
+            tx
+        );
+
+        const userProfile = await userProfilePort.createProfileForUser(
+            {userId: user.id},
+            tx
+        );
+
+        return user;
+    })
 
     return {
         message: 'User registered successfully',

@@ -22,7 +22,6 @@ module.exports = {
         return implementation.findIdByEmail(...args);
     },
 
-
     createForAuth: async (...args) => {
         ensureImpl();
         return implementation.createForAuth(...args);

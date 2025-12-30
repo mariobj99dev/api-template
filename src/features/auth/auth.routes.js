@@ -12,13 +12,19 @@ const {
     registerSchema
 } = require('./auth.schema');
 
+const transactionPort = require('../auth/ports/transaction.port');
 const userPort = require('../auth/ports/user.port');
-const userPgAdapter = require('../auth/adapters/user.pg.adapter');
-
+const userProfilePort = require('../profile/ports/userProfile.port');
 const identityPort = require('./ports/identity.port');
+
+const transactionAdapter = require('../auth/adapters/transaction.adapter');
+const userPgAdapter = require('../auth/adapters/user.pg.adapter');
+const userProfilePgAdapter = require('../profile/adapters/userProfile.pg.adapter');
 const identityPgAdapter = require('./adapters/identity.pg.adapter');
 
+transactionPort.setImplementation(transactionAdapter);
 userPort.setImplementation(userPgAdapter);
+userProfilePort.setImplementation(userProfilePgAdapter);
 identityPort.setImplementation(identityPgAdapter);
 
 if (AUTH_PROVIDERS?.google?.enabled) {

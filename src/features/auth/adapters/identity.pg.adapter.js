@@ -12,10 +12,10 @@ exports.findUserIdByProvider = async ({ provider, providerUserId }) => {
     return result.rows[0]?.user_id || null;
 };
 
-exports.linkIdentity = async ({ userId, provider, providerUserId }) => {
+exports.linkIdentity = async ({ userId, provider, providerUserId }, client = db) => {
     const id = crypto.randomUUID();
 
-    await db.query(
+    await client.query(
         `INSERT INTO auth_identities (id, user_id, provider, provider_user_id)
          VALUES ($1, $2, $3, $4)
              ON CONFLICT (provider, provider_user_id) DO NOTHING`,
