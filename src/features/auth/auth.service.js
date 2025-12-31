@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 const userPort = require('../users/ports/user.port');
-const userProfilePort = require('../profile/ports/userProfile.port');
+const userProfilePort = require('../profiles/ports/userProfile.port');
 const transactionPort = require('./ports/transaction.port');
 const identityPort = require('./ports/authIdentity.port');
 const sessionPort = require('./ports/session.port');

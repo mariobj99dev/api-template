@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 
 const userPort = require('../../../users/ports/user.port');
-const userProfilePort = require('../../../profile/ports/userProfile.port');
+const userProfilePort = require('../../../profiles/ports/userProfile.port');
 const identityPort = require('../../ports/authIdentity.port');
 const transactionPort = require('../../ports/transaction.port');
 
