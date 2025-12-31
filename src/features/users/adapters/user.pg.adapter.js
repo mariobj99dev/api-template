@@ -63,7 +63,7 @@ exports.createForAuth = async ({ email, passwordHash, username }, client = db) =
     return { id: result.rows[0].id };
 };
 
-exports.updateLastLogin = async ({userId}, client = db) => {
+exports.updateLastLogin = async (userId, client = db) => {
     const result = await client.query(
         `UPDATE users SET last_login_at = NOW() WHERE id = $1`,
         [userId]

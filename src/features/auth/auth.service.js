@@ -140,10 +140,11 @@ exports.sessions = async (userId) => {
         throw NotFound('User not found', 'USER_NOT_FOUND');
     }
 
+    //TODO: Cambiar esto para encontrar bien las sesiones de un usuario
     const sessions = await sessionPort.findUserSessions(userId);
 
     const loginAttempts = await loginAttemptsPort.findLoginAttempts({
-        email: user.email,
+        identifier: user.nickname,
         limit: 20,
     });
 
