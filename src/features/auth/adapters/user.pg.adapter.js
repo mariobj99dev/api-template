@@ -1,21 +1,6 @@
 
 const db = require('../../../app/database');
 
-/*exports.findForAuth = async (email) => {
-    const result = await db.query(
-        'SELECT id, password FROM users WHERE email = $1',
-        [email]
-    );
-
-    if (!result.rows[0]) return null;
-
-    return {
-        id: result.rows[0].id,
-        //TODO: Cambiar passwordHash por password
-        passwordHash: result.rows[0].password,
-    };
-};*/
-
 const looksLikeEmail = (value) => typeof value === 'string' && value.includes('@');
 
 exports.findForAuth = async (identifier) => {
@@ -28,7 +13,7 @@ exports.findForAuth = async (identifier) => {
 
     return {
         id: result.rows[0].id,
-        passwordHash: result.rows[0].password,
+        passwordHash: result.rows[0].password_hash,
     };
 };
 
@@ -76,4 +61,11 @@ exports.createForAuth = async ({ email, passwordHash, username }, client = db) =
     );
 
     return { id: result.rows[0].id };
+};
+
+exports.updateLastLogin = async ({userId}, client = db) => {
+    const result = await client.query(
+        `UPDATE users SET last_login_at = NOW() WHERE id = $1`,
+        [userId]
+    )
 };

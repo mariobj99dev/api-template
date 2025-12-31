@@ -41,4 +41,9 @@ module.exports = {
         ensureImpl();
         return implementation.existsByUsername(...args);
     },
+
+    updateLastLogin: async (...args) => {
+        ensureImpl();
+        return implementation.updateLastLogin(...args);
+    }
 };

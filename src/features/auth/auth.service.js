@@ -48,6 +48,9 @@ exports.login = async ({ identifier, password }, { ip } = {}) => {
         ip,
     });
 
+    await userPort.updateLastLogin(authUser.id);
+    //TODO: Tener en cuenta que una vez inicia sesión actualiza la ultima sesión pero no la guarda aqui
+
     logger.info(
         { userId: authUser.id, ip },
         'Login successful'
