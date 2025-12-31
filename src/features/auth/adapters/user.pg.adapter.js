@@ -11,6 +11,7 @@ exports.findForAuth = async (email) => {
 
     return {
         id: result.rows[0].id,
+        //TODO: Cambiar passwordHash por password
         passwordHash: result.rows[0].password,
     };
 };

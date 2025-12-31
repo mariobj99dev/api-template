@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const userPort = require('./ports/user.port');
 const userProfilePort = require('../profile/ports/userProfile.port');
 const transactionPort = require('./ports/transaction.port');
+const identityPort = require('./ports/identity.port');
 const repo = require('./auth.repository');
 
 const logger = require('../../app/config/logger')
@@ -74,6 +75,13 @@ exports.register = async ({ email, password, username }) => {
             {userId: user.id},
             tx
         );
+
+        const linkedIdentity = await identityPort.linkIdentity({
+            userId: user.id,
+            provider: 'local',
+            providerUserId: user.id},
+            tx
+        )
 
         return user;
     })
