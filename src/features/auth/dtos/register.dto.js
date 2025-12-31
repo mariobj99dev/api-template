@@ -1,14 +1,9 @@
 
 const { BadRequest } = require('../../../app/errors');
 
-exports.RegisterDTO = ({ email, password, username }) => {
-    if (!email || !password) {
+exports.RegisterDTO = ({ email, username, password }) => {
+    if ((!email && !username) || !password) {
         throw BadRequest('Invalid register payload', 'INVALID_REGISTER_PAYLOAD');
     }
-
-    return {
-        email,
-        password,
-        username,
-    };
+    return { email: email ?? null, username: username ?? null, password };
 };

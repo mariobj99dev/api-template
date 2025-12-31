@@ -7,6 +7,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
+const logger = require('../../../app/config/logger');
+
 const {
     TooManyRequests,
     Unauthorized,
@@ -42,7 +44,7 @@ const signRefreshToken = ({ sessionId, userId, expiresIn = JWT_REFRESH_EXPIRES_I
 
 const enforceLoginRateLimit = async ({ identifier, ip }) => {
     const failedAttempts = await repo.countFailedLoginAttempts({
-        email: identifier,
+        identifier: identifier,
         ip,
         minutes: LOGIN_ATTEMPT_WINDOW_MINUTES,
     });
@@ -63,17 +65,17 @@ const authenticateUser = async ({ identifier, password, ip }) => {
     const authUser = await userPort.findForAuth(identifier);
 
     if (!authUser) {
-        await repo.logLoginAttempt({ email: identifier, ip, success: false });
+        await repo.logLoginAttempt({ identifier: identifier, ip, success: false });
         throw Unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
     }
 
     const ok = await bcrypt.compare(password, authUser.passwordHash);
     if (!ok) {
-        await repo.logLoginAttempt({ email: identifier, ip, success: false });
+        await repo.logLoginAttempt({ identifier: identifier, ip, success: false });
         throw Unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
     }
 
-    await repo.logLoginAttempt({ email: identifier, ip, success: true });
+    await repo.logLoginAttempt({ identifier: identifier, ip, success: true });
     return authUser;
 };
 

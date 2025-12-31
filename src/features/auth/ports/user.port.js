@@ -22,6 +22,11 @@ module.exports = {
         return implementation.findIdByEmail(...args);
     },
 
+    findIdByUsername: async (...args) => {
+        ensureImpl();
+        return implementation.findIdByUsername(...args);
+    },
+
     createForAuth: async (...args) => {
         ensureImpl();
         return implementation.createForAuth(...args);
@@ -32,8 +37,8 @@ module.exports = {
         return implementation.existsByEmail(...args);
     },
 
-    findPublicProfileById: async (...args) => {
+    existsByUsername: async (...args) => {
         ensureImpl();
-        return implementation.findPublicProfileById(...args);
+        return implementation.existsByUsername(...args);
     },
 };

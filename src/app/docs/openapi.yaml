@@ -14,9 +14,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password]
+              required: [identifier, password]
               properties:
-                email: { type: string, format: email }
+                identifier: { type: string }
                 password: { type: string, minLength: 6 }
       responses:
         "200":
@@ -28,11 +28,12 @@ paths:
       summary: Register
       requestBody:
         required: true
+        description: "Username and email are optional but its mandatory to use one of them."
         content:
           application/json:
             schema:
               type: object
-              required: [username, email, password]
+              required: [password]
               properties:
                 username: { type: string, minLength: 2 }
                 email: { type: string, format: email }

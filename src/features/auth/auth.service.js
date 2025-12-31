@@ -57,39 +57,39 @@ exports.login = async ({ identifier, password }, { ip } = {}) => {
 };
 
 exports.register = async ({ email, password, username }) => {
-    const exists = await userPort.existsByEmail(email);
-    if (exists) {
-        logger.warn({ email }, 'Register attempt with existing email');
-        throw Conflict('Email already in use', 'EMAIL_EXISTS');
+    if (email) {
+        const existsEmail = await userPort.existsByEmail(email);
+        if (existsEmail) throw Conflict('Email already in use', 'EMAIL_EXISTS');
+    }
+
+    if (username) {
+        const existsUsername = await userPort.existsByUsername(username);
+        if (existsUsername) throw Conflict('Username already in use', 'USERNAME_EXISTS');
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     const user = await transactionPort.runInTransaction(async (tx) => {
         const user = await userPort.createForAuth(
-            {email, passwordHash, username},
+            { email, passwordHash, username },
             tx
         );
 
-        const userProfile = await userProfilePort.createProfileForUser(
-            {userId: user.id},
+        await userProfilePort.createProfileForUser({ userId: user.id }, tx);
+
+        await identityPort.linkIdentity(
+            {
+                userId: user.id,
+                provider: 'local',
+                providerUserId: `local:${user.id}`,
+            },
             tx
         );
-
-        const linkedIdentity = await identityPort.linkIdentity({
-            userId: user.id,
-            provider: 'local',
-            providerUserId: user.id},
-            tx
-        )
 
         return user;
-    })
+    });
 
-    return {
-        message: 'User registered successfully',
-        userId: user.id,
-    };
+    return { message: 'User registered successfully', userId: user.id };
 };
 
 
@@ -120,7 +120,7 @@ exports.logout = async ({ refreshToken }) => {
 };
 
 exports.me = async (userId) => {
-    const user = await userPort.findPublicProfileById(userId);
+    const user = await userProfilePort.findUserProfileByUserId(userId);
 
     if (!user) {
         throw NotFound('User not found', 'USER_NOT_FOUND');
@@ -131,7 +131,7 @@ exports.me = async (userId) => {
 
 exports.sessions = async (userId) => {
 
-    const user = await userPort.findPublicProfileById(userId);
+    const user = await userProfilePort.findUserProfileByUserId(userId);
     if (!user) {
         throw NotFound('User not found', 'USER_NOT_FOUND');
     }

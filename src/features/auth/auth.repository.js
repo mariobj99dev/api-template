@@ -5,8 +5,8 @@ const db = require('../../app/database')
 // Sessions (Refresh tokens)
 // ----------------------------
 
-exports.createSession = async ({ userId, refreshTokenHash, expiresAt, sessionId = randomUUID() }) => {
-    const result = await db.query(
+exports.createSession = async ({ userId, refreshTokenHash, expiresAt, sessionId = randomUUID() }, client = db) => {
+    const result = await client.query(
         `INSERT INTO user_sessions
       (id, user_id, refresh_token_hash, expires_at)
      VALUES ($1, $2, $3, $4)
@@ -24,8 +24,8 @@ exports.findSessionById = async (sessionId) => {
     return result.rows[0];
 };
 
-exports.rotateSessionToken = async ({ sessionId, newRefreshTokenHash }) => {
-    const result = await db.query(
+exports.rotateSessionToken = async ({ sessionId, newRefreshTokenHash }, client = db) => {
+    const result = await client.query(
         `UPDATE user_sessions
      SET previous_refresh_token_hash = refresh_token_hash,
          refresh_token_hash = $2,
@@ -38,8 +38,8 @@ exports.rotateSessionToken = async ({ sessionId, newRefreshTokenHash }) => {
     return result.rows[0];
 };
 
-exports.revokeSession = async ({ sessionId, reason = 'logout' }) => {
-    const result = await db.query(
+exports.revokeSession = async ({ sessionId, reason = 'logout' }, client = db) => {
+    const result = await client.query(
         `UPDATE user_sessions
      SET revoked_at = NOW(), revoked_reason = $2
      WHERE id = $1 AND revoked_at IS NULL
@@ -49,8 +49,8 @@ exports.revokeSession = async ({ sessionId, reason = 'logout' }) => {
     return result.rows[0];
 };
 
-exports.revokeAllUserSessions = async ({ userId, reason = 'security' }) => {
-    await db.query(
+exports.revokeAllUserSessions = async ({ userId, reason = 'security' }, client = db) => {
+    await client.query(
         `UPDATE user_sessions
      SET revoked_at = NOW(), revoked_reason = $2
      WHERE user_id = $1 AND revoked_at IS NULL`,
@@ -62,29 +62,29 @@ exports.revokeAllUserSessions = async ({ userId, reason = 'security' }) => {
 // Login attempts (IP + user)
 // ----------------------------
 
-exports.countFailedLoginAttempts = async ({ email, ip, minutes }) => {
+exports.countFailedLoginAttempts = async ({ identifier, ip, minutes }) => {
     const result = await db.query(
         `
         SELECT COUNT(*)::int AS count
         FROM login_attempts
-        WHERE email = $1
+        WHERE identifier = $1
           AND ip_address = $2
           AND success = false
           AND created_at > NOW() - INTERVAL '${minutes} minutes'
         `,
-        [email, ip]
+        [identifier, ip]
     );
 
     return result.rows[0].count;
 };
 
-exports.logLoginAttempt = async ({ email, ip, success }) => {
-    await db.query(
+exports.logLoginAttempt = async ({ identifier, ip, success }, client = db) => {
+    await client.query(
         `
-        INSERT INTO login_attempts (email, ip_address, success)
+        INSERT INTO login_attempts (identifier, ip_address, success)
         VALUES ($1, $2, $3)
         `,
-        [email, ip, success]
+        [identifier, ip, success]
     );
 };
 
@@ -112,7 +112,7 @@ exports.findUserSessions = async (userId) => {
     return result.rows;
 };
 
-exports.findLoginAttempts = async ({ email, limit = 20 }) => {
+exports.findLoginAttempts = async ({ identifier, limit = 20 }) => {
     const result = await db.query(
         `
         SELECT
@@ -120,11 +120,11 @@ exports.findLoginAttempts = async ({ email, limit = 20 }) => {
             success,
             created_at
         FROM login_attempts
-        WHERE email = $1
+        WHERE identifier = $1
         ORDER BY created_at DESC
         LIMIT $2
         `,
-        [email, limit]
+        [identifier, limit]
     );
 
     return result.rows;
