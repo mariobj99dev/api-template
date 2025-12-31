@@ -1,7 +1,8 @@
 // features/auth/helpers/login.helper.js
 
-const repo = require('../auth.repository');
-const userPort = require('../ports/user.port');
+const userPort = require('../../users/ports/user.port');
+const loginAttemptsPort = require('../ports/loginAttempts.port');
+const sessionPort = require('../ports/session.port');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -43,7 +44,7 @@ const signRefreshToken = ({ sessionId, userId, expiresIn = JWT_REFRESH_EXPIRES_I
     );
 
 const enforceLoginRateLimit = async ({ identifier, ip }) => {
-    const failedAttempts = await repo.countFailedLoginAttempts({
+    const failedAttempts = await loginAttemptsPort.countFailedLoginAttempts({
         identifier: identifier,
         ip,
         minutes: LOGIN_ATTEMPT_WINDOW_MINUTES,
@@ -65,17 +66,17 @@ const authenticateUser = async ({ identifier, password, ip }) => {
     const authUser = await userPort.findForAuth(identifier);
 
     if (!authUser) {
-        await repo.logLoginAttempt({ identifier: identifier, ip, success: false });
+        await loginAttemptsPort.logLoginAttempt({ identifier: identifier, ip, success: false });
         throw Unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
     }
 
     const ok = await bcrypt.compare(password, authUser.passwordHash);
     if (!ok) {
-        await repo.logLoginAttempt({ identifier: identifier, ip, success: false });
+        await loginAttemptsPort.logLoginAttempt({ identifier: identifier, ip, success: false });
         throw Unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
     }
 
-    await repo.logLoginAttempt({ identifier: identifier, ip, success: true });
+    await loginAttemptsPort.logLoginAttempt({ identifier: identifier, ip, success: true });
     return authUser;
 };
 
@@ -88,7 +89,7 @@ const createSessionAndTokens = async (userId) => {
     const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
     const expiresAt = new Date(payload.exp * 1000);
 
-    await repo.createSession({
+    await sessionPort.createSession({
         sessionId,
         userId,
         refreshTokenHash: hashRefreshToken(refreshToken),

@@ -1,6 +1,5 @@
-// features/auth/helpers/refresh.helper.js
 
-const repo = require('../auth.repository');
+const sessionPort = require('../ports/session.port');
 
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -48,7 +47,7 @@ const loadValidSession = async (payload) => {
         throw Unauthorized('Invalid refresh token payload', 'REFRESH_PAYLOAD');
     }
 
-    const session = await repo.findSessionById(payload.sid);
+    const session = await sessionPort.findSessionById(payload.sid);
     if (!session) throw NotFound('Session not found', 'SESSION_NOT_FOUND');
 
     if (session.revoked_at) {
@@ -60,7 +59,7 @@ const loadValidSession = async (payload) => {
     }
 
     if (new Date(session.expires_at) <= new Date()) {
-        await repo.revokeSession({ sessionId: session.id, reason: 'expired' });
+        await session.revokeSession({ sessionId: session.id, reason: 'expired' });
         throw Unauthorized('Session expired', 'SESSION_EXPIRED');
     }
 
@@ -79,7 +78,7 @@ const rotateTokens = async ({ session, refreshToken }) => {
         const remainingSeconds = Math.floor(remainingMs / 1000);
 
         if (remainingSeconds <= 0) {
-            await repo.revokeSession({ sessionId: session.id, reason: 'expired' });
+            await sessionPort.revokeSession({ sessionId: session.id, reason: 'expired' });
             throw Unauthorized('Session expired', 'SESSION_EXPIRED');
         }
 
@@ -89,7 +88,7 @@ const rotateTokens = async ({ session, refreshToken }) => {
             expiresIn: remainingSeconds,
         });
 
-        await repo.rotateSessionToken({
+        await sessionPort.rotateSessionToken({
             sessionId: session.id,
             newRefreshTokenHash: hashRefreshToken(newRefreshToken),
         });
@@ -102,7 +101,7 @@ const rotateTokens = async ({ session, refreshToken }) => {
         session.previous_refresh_token_hash &&
         incomingHash === session.previous_refresh_token_hash
     ) {
-        await repo.revokeAllUserSessions({
+        await sessionPort.revokeAllUserSessions({
             userId: session.user_id,
             reason: 'refresh_reuse_detected',
         });
@@ -113,7 +112,7 @@ const rotateTokens = async ({ session, refreshToken }) => {
         throw Unauthorized('Refresh token reuse detected', 'REFRESH_INVALID');
     }
 
-    await repo.revokeSession({
+    await sessionPort.revokeSession({
         sessionId: session.id,
         reason: 'invalid_refresh',
     });

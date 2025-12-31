@@ -2,9 +2,9 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 
-const userPort = require('../../ports/user.port');
+const userPort = require('../../../users/ports/user.port');
 const userProfilePort = require('../../../profile/ports/userProfile.port');
-const identityPort = require('../../ports/identity.port');
+const identityPort = require('../../ports/authIdentity.port');
 const transactionPort = require('../../ports/transaction.port');
 
 const { createSessionAndTokens } = require('../../helpers/login.helper');

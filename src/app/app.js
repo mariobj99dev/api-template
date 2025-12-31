@@ -2,7 +2,7 @@
 
 const express = require('express');
 
-require('./bootstrap');
+require('./di');
 
 const swaggerUi = require('swagger-ui-express');
 const helmet = require('helmet');

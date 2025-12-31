@@ -3,11 +3,12 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const userPort = require('./ports/user.port');
+const userPort = require('../users/ports/user.port');
 const userProfilePort = require('../profile/ports/userProfile.port');
 const transactionPort = require('./ports/transaction.port');
-const identityPort = require('./ports/identity.port');
-const repo = require('./auth.repository');
+const identityPort = require('./ports/authIdentity.port');
+const sessionPort = require('./ports/session.port');
+const loginAttemptsPort = require('./ports/loginAttempts.port');
 
 const logger = require('../../app/config/logger')
 
@@ -113,7 +114,7 @@ exports.logout = async ({ refreshToken }) => {
     try {
         const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
         if (payload?.sid) {
-            await repo.revokeSession({ sessionId: payload.sid, reason: 'logout' });
+            await sessionPort.revokeSession({ sessionId: payload.sid, reason: 'logout' });
         }
     } catch {
         // idempotente
@@ -139,9 +140,9 @@ exports.sessions = async (userId) => {
         throw NotFound('User not found', 'USER_NOT_FOUND');
     }
 
-    const sessions = await repo.findUserSessions(userId);
+    const sessions = await sessionPort.findUserSessions(userId);
 
-    const loginAttempts = await repo.findLoginAttempts({
+    const loginAttempts = await loginAttemptsPort.findLoginAttempts({
         email: user.email,
         limit: 20,
     });
