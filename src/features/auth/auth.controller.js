@@ -6,28 +6,6 @@ const logger = require('../../app/config/logger')
 
 const { REFRESH_COOKIE_OPTIONS } = require('./helpers/refreshCookieOptions.helper');
 
-
-const {
-    COOKIE_HTTP_ONLY,
-    COOKIE_SECURE,
-    COOKIE_SAMESITE,
-    COOKIE_PATH,
-} = require('../../app/config/env');
-
-/*const REFRESH_COOKIE_OPTIONS = {
-    httpOnly: COOKIE_HTTP_ONLY === 'true',
-    secure: COOKIE_SECURE === 'true',
-    sameSite: COOKIE_SAMESITE,
-    path: COOKIE_PATH
-};*/
-
-// Login sin cookie httpOnly + secure + sameSite
-/*exports.login = async (req, res) => {
-    const dto = LoginDTO(req.body);
-    const result = await service.login(dto, { ip: req.ip });
-    res.json(result);
-};*/
-
 exports.login = async (req, res) => {
     const dto = LoginDTO(req.body);
     const { accessToken, refreshToken } = await service.login(dto, { ip: req.ip });
@@ -48,11 +26,6 @@ exports.register = async (req, res) => {
     res.status(201).json(result);
 };
 
-// Refresh sin cookie httpOnly + secure + sameSite
-/*exports.refresh = async (req, res) => {
-    const result = await service.refresh(req.body);
-    res.json(result);
-};*/
 
 exports.refresh = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
@@ -64,12 +37,6 @@ exports.refresh = async (req, res) => {
         .cookie('refreshToken', newRefreshToken, REFRESH_COOKIE_OPTIONS)
         .json({ accessToken });
 };
-
-// Logout sin cookie httpOnly + secure + sameSite
-/*exports.logout = async (req, res) => {
-    const result = await service.logout(req.body);
-    res.json(result);
-};*/
 
 exports.logout = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
@@ -91,3 +58,23 @@ exports.sessions = async (req, res) => {
     const result = await service.sessions(req.userId);
     res.json(result);
 }
+
+// Login sin cookie httpOnly + secure + sameSite
+/*exports.login = async (req, res) => {
+    const dto = LoginDTO(req.body);
+    const result = await service.login(dto, { ip: req.ip });
+    res.json(result);
+};*/
+
+
+// Refresh sin cookie httpOnly + secure + sameSite
+/*exports.refresh = async (req, res) => {
+    const result = await service.refresh(req.body);
+    res.json(result);
+};*/
+
+// Logout sin cookie httpOnly + secure + sameSite
+/*exports.logout = async (req, res) => {
+    const result = await service.logout(req.body);
+    res.json(result);
+};*/

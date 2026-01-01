@@ -1,7 +1,3 @@
-// features/auth/auth.service.js
-
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 const userPort = require('../users/ports/user.port');
 const userProfilePort = require('../profiles/ports/userProfile.port');
@@ -10,146 +6,64 @@ const identityPort = require('./ports/authIdentity.port');
 const sessionPort = require('./ports/session.port');
 const loginAttemptsPort = require('./ports/loginAttempts.port');
 
-const logger = require('../../app/config/logger')
+const logger = require('../../app/config/logger');
 
-const {
-    SALT_ROUNDS,
-    JWT_REFRESH_SECRET,
-} = require('../../app/config/env');
-
-const {
-    BadRequest,
-    Conflict,
-    NotFound
-} = require('../../app/errors');
+const { SALT_ROUNDS, JWT_REFRESH_SECRET } = require('../../app/config/env');
 
 const {
     enforceLoginRateLimit,
     authenticateUser,
     createSessionAndTokens,
-} = require('./helpers/login.helper');
+} = require('./helpers/login.helper'); // tu helper actual :contentReference[oaicite:2]{index=2}
 
 const {
     verifyRefreshToken,
     loadValidSession,
     rotateTokens,
-} = require('./helpers/refresh.helper');
+} = require('./helpers/refresh.helper'); // tu helper actual :contentReference[oaicite:3]{index=3}
 
-exports.login = async ({ identifier, password }, { ip } = {}) => {
-    if (!ip) {
-        logger.warn({ identifier }, 'Login attempt without IP');
-        throw BadRequest('IP address missing', 'IP_MISSING');
-    }
+const {
+    makeLoginUseCase,
+    makeRegisterUseCase,
+    makeRefreshUseCase,
+    makeLogoutUseCase,
+    makeMeUseCase,
+    makeSessionsUseCase,
+} = require('./useCases');
 
-    await enforceLoginRateLimit({ identifier, ip });
+module.exports = {
+    login: makeLoginUseCase({
+        userPort,
+        logger,
+        enforceLoginRateLimit,
+        authenticateUser,
+        createSessionAndTokens,
+    }),
 
-    const authUser = await authenticateUser({
-        identifier,
-        password,
-        ip,
-    });
+    register: makeRegisterUseCase({
+        userPort,
+        userProfilePort,
+        identityPort,
+        transactionPort,
+        SALT_ROUNDS,
+    }),
 
-    await userPort.updateLastLogin(authUser.id);
-    //TODO: Tener en cuenta que una vez inicia sesión actualiza la ultima sesión pero no la guarda aqui
+    refresh: makeRefreshUseCase({
+        verifyRefreshToken,
+        loadValidSession,
+        rotateTokens,
+    }),
 
-    logger.info(
-        { userId: authUser.id, ip },
-        'Login successful'
-    );
+    logout: makeLogoutUseCase({
+        sessionPort,
+        JWT_REFRESH_SECRET,
+    }),
 
-    return createSessionAndTokens(authUser.id);
-};
+    me: makeMeUseCase({ userProfilePort }),
 
-exports.register = async ({ email, password, username }) => {
-    if (email) {
-        const existsEmail = await userPort.existsByEmail(email);
-        if (existsEmail) throw Conflict('Email already in use', 'EMAIL_EXISTS');
-    }
-
-    if (username) {
-        const existsUsername = await userPort.existsByUsername(username);
-        if (existsUsername) throw Conflict('Username already in use', 'USERNAME_EXISTS');
-    }
-
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-
-    const user = await transactionPort.runInTransaction(async (tx) => {
-        const user = await userPort.createForAuth(
-            { email, passwordHash, username },
-            tx
-        );
-
-        await userProfilePort.createProfileForUser({ userId: user.id }, tx);
-
-        await identityPort.linkIdentity(
-            {
-                userId: user.id,
-                provider: 'local',
-                providerUserId: `local:${user.id}`,
-            },
-            tx
-        );
-
-        return user;
-    });
-
-    return { message: 'User registered successfully', userId: user.id };
-};
-
-
-exports.refresh = async ({ refreshToken }) => {
-    if (!refreshToken) {
-        throw BadRequest('Refresh token missing', 'REFRESH_MISSING');
-    }
-
-    const payload = verifyRefreshToken(refreshToken);
-    const session = await loadValidSession(payload);
-
-    return rotateTokens({ session, refreshToken });
-};
-
-exports.logout = async ({ refreshToken }) => {
-    if (!refreshToken) return { message: 'Logged out' };
-
-    try {
-        const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
-        if (payload?.sid) {
-            await sessionPort.revokeSession({ sessionId: payload.sid, reason: 'logout' });
-        }
-    } catch {
-        // idempotente
-    }
-
-    return { message: 'Logged out' };
-};
-
-exports.me = async (userId) => {
-    const user = await userProfilePort.findUserProfileByUserId(userId);
-
-    if (!user) {
-        throw NotFound('User not found', 'USER_NOT_FOUND');
-    }
-
-    return user;
-};
-
-exports.sessions = async (userId) => {
-
-    const user = await userProfilePort.findUserProfileByUserId(userId);
-    if (!user) {
-        throw NotFound('User not found', 'USER_NOT_FOUND');
-    }
-
-    //TODO: Cambiar esto para encontrar bien las sesiones de un usuario
-    const sessions = await sessionPort.findUserSessions(userId);
-
-    const loginAttempts = await loginAttemptsPort.findLoginAttempts({
-        identifier: user.nickname,
-        limit: 20,
-    });
-
-    return {
-        sessions,
-        loginAttempts,
-    };
+    sessions: makeSessionsUseCase({
+        userProfilePort,
+        sessionPort,
+        loginAttemptsPort,
+    }),
 };
