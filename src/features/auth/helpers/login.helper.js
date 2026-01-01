@@ -1,92 +1,56 @@
-// features/auth/helpers/login.helper.js
+const crypto = require('crypto');
 
 const userPort = require('../../users/ports/user.port');
 const loginAttemptsPort = require('../ports/loginAttempts.port');
 const sessionPort = require('../ports/session.port');
 
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-
-const logger = require('../../../app/config/logger');
-
+const { verifyPassword } = require('./password.helper');
 const {
-    TooManyRequests,
-    Unauthorized,
-} = require('../../../app/errors');
+    signAccessToken,
+    signRefreshToken,
+    hashRefreshToken,
+} = require('./tokens.helper');
+
+const { Unauthorized, TooManyRequests } = require('../../../app/errors');
+const logger = require('../../../app/config/logger');
 
 const {
     MAX_LOGIN_ATTEMPTS,
     LOGIN_ATTEMPT_WINDOW_MINUTES,
-    JWT_ACCESS_SECRET,
-    JWT_ACCESS_EXPIRES_IN,
-    JWT_REFRESH_SECRET,
-    JWT_REFRESH_EXPIRES_IN,
-    REFRESH_TOKEN_PEPPER
 } = require('../../../app/config/env');
-
-const hashRefreshToken = (token) =>
-    crypto
-        .createHmac('sha256', REFRESH_TOKEN_PEPPER)
-        .update(token)
-        .digest('hex');
-
-const signAccessToken = (userId) =>
-    jwt.sign({ id: userId }, JWT_ACCESS_SECRET, {
-        expiresIn: JWT_ACCESS_EXPIRES_IN,
-    });
-
-const signRefreshToken = ({ sessionId, userId, expiresIn = JWT_REFRESH_EXPIRES_IN }) =>
-    jwt.sign(
-        { sid: sessionId, uid: userId, type: 'refresh' },
-        JWT_REFRESH_SECRET,
-        { expiresIn }
-    );
 
 const enforceLoginRateLimit = async ({ identifier, ip }) => {
     const failedAttempts = await loginAttemptsPort.countFailedLoginAttempts({
-        identifier: identifier,
+        identifier,
         ip,
         minutes: LOGIN_ATTEMPT_WINDOW_MINUTES,
     });
 
     if (failedAttempts >= MAX_LOGIN_ATTEMPTS) {
-        logger.warn(
-            { identifier, ip },
-            'Login rate limit exceeded'
-        );
-        throw TooManyRequests(
-            'Too many login attempts. Try again later.',
-            'LOGIN_RATE_LIMIT'
-        );
+        logger.warn({ identifier, ip }, 'Login rate limit exceeded');
+        throw TooManyRequests('Too many login attempts', 'LOGIN_RATE_LIMIT');
     }
 };
 
 const authenticateUser = async ({ identifier, password, ip }) => {
-    const authUser = await userPort.findForAuth(identifier);
+    const user = await userPort.findForAuth(identifier);
 
-    if (!authUser) {
-        await loginAttemptsPort.logLoginAttempt({ identifier: identifier, ip, success: false });
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+        await loginAttemptsPort.logLoginAttempt({ identifier, ip, success: false });
         throw Unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
     }
 
-    const ok = await bcrypt.compare(password, authUser.passwordHash);
-    if (!ok) {
-        await loginAttemptsPort.logLoginAttempt({ identifier: identifier, ip, success: false });
-        throw Unauthorized('Invalid credentials', 'INVALID_CREDENTIALS');
-    }
-
-    await loginAttemptsPort.logLoginAttempt({ identifier: identifier, ip, success: true });
-    return authUser;
+    await loginAttemptsPort.logLoginAttempt({ identifier, ip, success: true });
+    return user;
 };
 
 const createSessionAndTokens = async (userId) => {
+    const sessionId = crypto.randomUUID();
+
+    const refreshToken = signRefreshToken({ sessionId, userId });
     const accessToken = signAccessToken(userId);
 
-    const sessionId = crypto.randomUUID();
-    const refreshToken = signRefreshToken({ sessionId, userId });
-
-    const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    const payload = require('jsonwebtoken').decode(refreshToken);
     const expiresAt = new Date(payload.exp * 1000);
 
     await sessionPort.createSession({

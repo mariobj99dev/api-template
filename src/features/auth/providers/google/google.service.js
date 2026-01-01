@@ -7,7 +7,7 @@ const userProfilePort = require('../../../profiles/ports/userProfile.port');
 const identityPort = require('../../ports/authIdentity.port');
 const transactionPort = require('../../ports/transaction.port');
 
-const { createSessionAndTokens } = require('../../helpers/sessionTokens.helper');
+const { createSessionAndTokens } = require('../../helpers/login.helper');
 //const { createSessionAndTokens } = require('../../helpers/login.helper');
 
 const {
