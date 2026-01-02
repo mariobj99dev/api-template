@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const db = require('../database');
 const logger = require('../config/logger')
-const { SESSION_LOGOUT_RETENTION_DAYS } = require('../../app/config/env');
+const { SESSION_LOGOUT_RETENTION_DAYS } = require('../config/env');
 
 const LOGOUT_RETENTION_DAYS = Number(
     SESSION_LOGOUT_RETENTION_DAYS

@@ -6,7 +6,7 @@ const {
     DATABASE_PASSWORD,
     DATABASE_DATABASE,
     DATABASE_PORT
-} = require('../app/config/env');
+} = require('./config/env');
 
 const pool = new Pool({
     host: DATABASE_HOST,

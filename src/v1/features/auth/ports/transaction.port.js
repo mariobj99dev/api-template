@@ -1,10 +1,27 @@
+
+let implementation = {
+    // 👇 fallback seguro (NullAdapter)
+    runInTransaction: async (fn) => fn(),
+};
+
+module.exports = {
+    setImplementation: (impl) => {
+        implementation = impl;
+    },
+
+    runInTransaction: async (...args) => {
+        return implementation.runInTransaction(...args);
+    },
+};
+
+/*
 let implementation = null;
 
 const ensureImpl = () => {
     if (!implementation) {
         throw new Error("TransactionPort implementation not set")
     }
-}
+}*/
 
 /*
 module.exports = {
@@ -15,6 +32,7 @@ module.exports = {
 }*/
 
 
+/*
 module.exports = {
     setImplementation: (impl) => {
         implementation = impl;
@@ -24,4 +42,4 @@ module.exports = {
         ensureImpl();
         return implementation.runInTransaction(...args);
     },
-};
+};*/
